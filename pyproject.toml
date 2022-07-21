@@ -1,0 +1,19 @@
+[project]
+name = "learn-fastapi"
+version = "0.0.1"
+description = ""
+authors = [
+    {name = "ryomahan", email = "ryomahan1996@gmail.com"},
+]
+dependencies = [
+    "uvicorn>=0.18.2",
+]
+requires-python = ">=3.7"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool]
+[tool.pdm]
