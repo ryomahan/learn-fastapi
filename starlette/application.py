@@ -1,8 +1,8 @@
 from cgitb import handler
 import typing
 
-from starlette.types import ASGIApp
 from starlette.middleware import Middleware
+from starlette.type import ASGIApp, Scope, Receive, Send
 
 
 # 待导入
@@ -80,6 +80,7 @@ class Starlette:
         当然这也有可能是作者有意为之，还需要继续阅读才能确定
         """
         # TODO question there is not self.debug
+        # TODO answer   debug is a property
         debug = self.debug
         error_handler = None
         exception_handlers: typing.Dict[
@@ -109,4 +110,8 @@ class Starlette:
             app = cls(app=app, **options)
         
         return app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        scope["app"] = self
+        await self.middleware_stack(scope, receive, send)
 

@@ -1,6 +1,6 @@
 import typing
 
-from starlette.types import Scope, Receive
+from starlette.type import Scope, Receive
 
 
 class HTTPConnection(typing.Mapping[str, typing.Any]):
