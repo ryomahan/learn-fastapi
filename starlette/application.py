@@ -2,14 +2,25 @@ from cgitb import handler
 import typing
 
 from starlette.types import ASGIApp
+from starlette.middleware import Middleware
+
 
 # 待导入
-State = None
-Router = None
+class State():
+
+    def __init__(self):
+        return 1
+
+
+class Router:
+
+    def __int__(self, routes, on_startup, on_shutdown, lifespan):
+        return 1
+
+
 Request = None
 Response = None
 BaseRoute = None
-Middleware = None
 ExceptionMiddleware = None
 ServerErrorMiddleware = None
 
@@ -32,7 +43,7 @@ class Starlette:
         on_startup: typing.Optional[typing.Sequence[typing.Callable]] = None,
         on_shutdown: typing.Optional[typing.Sequence[typing.Callable]] = None,
         lifespan: typing.Optional[
-            typing.Callable[["Starlette", typing.AsyncContextManager]]
+            typing.Callable[["Starlette"], typing.AsyncContextManager]
         ] = None
     ) -> None:
         # lifespan 上下文函数是 on_startup 和 on_shutdown 处理器的一种新写法
@@ -50,6 +61,16 @@ class Starlette:
         )
         self.user_middleware = [] if middleware is None else list(middleware)
 
+        self.middleware_stack = self.build_middleware_stack()
+
+    @property
+    def debug(self) -> None:
+        return self._debug
+
+    @debug.setter
+    def debug(self, value: bool):
+        # TODO question What does this function do?
+        self._debug = value
         self.middleware_stack = self.build_middleware_stack()
 
     def build_middleware_stack(self) -> ASGIApp:
@@ -83,6 +104,7 @@ class Starlette:
 
         app = self.router
 
+        # 将 middleware 顺序进行反转，然后不断进行套娃
         for cls, options in reversed(middleware):
             app = cls(app=app, **options)
         
