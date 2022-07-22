@@ -1,6 +1,6 @@
 import typing
 
-from starlette.type import Scope, Receive
+from starlette.type import Scope, Receive, Send, Message
 
 
 class HTTPConnection(typing.Mapping[str, typing.Any]):
@@ -9,8 +9,27 @@ class HTTPConnection(typing.Mapping[str, typing.Any]):
     """
 
     def __init__(self, scope: Scope, receive: typing.Optional[Receive] = None) -> None:
-        pass
+        # TODO question | why HTTPConnection class type in http or websocket
+        assert scope["type"] in ("http", "websocket",)
+
+        self.scope = scope
+
+
+async def empty_receive() -> typing.NoReturn:
+    raise RuntimeError("Receive channel has not been made available")
+
+
+async def empty_send(message: Message) -> typing.NoReturn:
+    raise RuntimeError("Send channel has not been made available")
 
 
 class Request(HTTPConnection):
-    pass
+
+    def __init__(self, scope: Scope, receive: Receive = empty_receive, send: Send = empty_send):
+        super().__init__(scope)
+        assert scope["type"] == "http"
+        self._receive = receive
+        self._send = send
+        self._stream_consumed = False
+        self._is_disconnected = False
+

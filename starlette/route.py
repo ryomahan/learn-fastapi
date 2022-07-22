@@ -4,6 +4,8 @@ import functools
 
 from starlette.request import Request
 from starlette.utils import is_async_callable
+from starlette.convertor import Convertor
+from starlette.concurrency import run_in_threadpool
 from starlette.type import ASGIApp, Scope, Receive, Send
 
 
@@ -14,6 +16,8 @@ def request_response(func: typing.Callable) -> ASGIApp:
     async def app(scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive=receive, send=send)
 
+        # 如果给到的函数是协程（异步函数），将请求传入得到响应
+        # 如果给到的函数不是协程（异步函数），
         if is_coroutine:
             response = await func(request)
         else:
@@ -31,6 +35,14 @@ def get_name(endpoint: typing.Callable) -> str:
 
 
 class BaseRoute:
+    pass
+
+
+def compile_path(path: str) -> typing.Tuple[typing.Pattern, str, typing.Dict[str, Convertor]]:
+    is_host = not path.startswith("/")
+
+    path_regex = "^"
+    path_format = ""
     pass
 
 
@@ -69,4 +81,14 @@ class Route(BaseRoute):
                 methods = ["GET"]
         else:
             self.app = endpoint
+
+        if methods is None:
+            self.methods = None
+        else:
+            self.methods = {method.upper() for method in methods}
+            # TODO question | what's mean
+            if "GET" in self.methods:
+                self.methods.add("HEAD")
+
+        self.path_regex, self.path_format, self.param_convertors = compile_path(path)
 
