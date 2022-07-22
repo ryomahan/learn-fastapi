@@ -1,4 +1,7 @@
+import json
 import typing
+
+from starlette.type import Scope, Receive, Send
 
 BackgroundTask = None
 
@@ -29,7 +32,7 @@ class Response:
             return b""
         if isinstance(content, bytes):
             return content
-        # TODO need-learn | code's feature
+        # TODO need-learn | encode's feature
         return content.encode(self.charset)
 
     def init_headers(
@@ -45,6 +48,12 @@ class Response:
             populate_content_type = True
         else:
             # TODO question what's mean of encode("latin-1")
+            # TODO answer
+            # ISO 8859-1，正式编号为ISO/IEC 8859-1:1998，又称Latin-1或“西欧语言”，是国际标准化组织内ISO/IEC 8859的第一个8位字符集。
+            # 它以ASCII为基础，在空置的0xA0-0xFF的范围内，加入96个字母及符号，藉以供使用附加符号的拉丁字母语言使用。
+            # 曾推出过 ISO 8859-1:1987 版。
+            # ISO-8859-1的别名有: iso-ir-100、csISOLatin1、 latin1、 l1、 IBM819。Oracle数据库称WE8ISO8859P1。
+            # ISO-8859-1对应于ISO/IEC 10646即Unicode的前256个码位。
             raw_headers = [
                 (k.lower().encode("latin-1"), v.encode("latin-1"))
                 for k, v in headers.items()
@@ -75,6 +84,42 @@ class Response:
         # TODO feature add raw_headers in __init__
         self.raw_headers = raw_headers
 
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        # TODO question | why should status, headers and body be returned separately?
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self.status_code,
+                "headers": self.raw_headers,
+            }
+        )
+
+        await send({"type": "http.response.body", "body": self.body})
+
+        # TODO question | whether background will block the overall program execution if background is cpu task
+        if self.background is not None:
+            await self.background()
+
 
 class JSONResponse(Response):
-    pass
+    media_type = "application/json"
+
+    def __init__(
+            self,
+            content: typing.Any,
+            status_code: int = 200,
+            # TODO question | why there use Dict up use Mapping
+            headers: typing.Optional[typing.Dict[str, str]] = None,
+            media_type: typing.Optional[str] = None,
+            background: typing.Optional[BackgroundTask] = None
+    ):
+        super().__init__(content, status_code, headers, media_type, background)
+
+    def render(self, content: typing.Any) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=None,
+            separators=(",", ":"),
+        ).encode("utf-8")
