@@ -35,3 +35,17 @@ object.__aenter__(self)
 
 object.__aexit__(self, exc_type, exc_value, traceback)
 在语义上类似于 __exit__()，仅有的区别是它必须返回一个 可等待对象。
+
+## ParamSpec
+
+## TypeVar
+
+泛型
+
+T = TypeVar('T')  # Can be anything
+S = TypeVar('S', bound=str)  # Can be any subtype of str
+A = TypeVar('A', str, bytes)  # Must be exactly str or bytes
+U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
+V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
+
+## ClassVar

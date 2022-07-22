@@ -15,7 +15,7 @@ Starlette.build_middleware_stack -> Starlette.\_\_call\_\_ ->
 
 ## route
 
-BaseRoute -> Route -> \_\_init\_\_ 
+BaseRoute -> Route -> \_\_init\_\_ -> request_response -> Request
 
 ## utils
 
@@ -24,6 +24,10 @@ is_async_callable
 ## request
 
 HTTPConnection -> Request
+
+## concurrency
+
+run_in_threadpool
 
 ## response
 参考资料：MDN-HTTP
