@@ -49,3 +49,7 @@ U = TypeVar('U', bound=str|bytes)  # Can be any subtype of the union str|bytes
 V = TypeVar('V', bound=SupportsAbs)  # Can be anything with an __abs__ method
 
 ## ClassVar
+
+## Pattern
+这些类型对应的是从 re.compile() 和 re.match() 返回的类型。 
+这些类型（及相应的函数）是 AnyStr 中的泛型并可通过编写 Pattern[str], Pattern[bytes], Match[str] 或 Match[bytes] 来具体指定。

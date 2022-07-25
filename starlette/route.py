@@ -1,10 +1,11 @@
+import re
 import typing
 import inspect
 import functools
 
 from starlette.request import Request
 from starlette.utils import is_async_callable
-from starlette.convertor import Convertor
+from starlette.convertor import Convertor, CONVERTOR_TYPES
 from starlette.concurrency import run_in_threadpool
 from starlette.type import ASGIApp, Scope, Receive, Send
 
@@ -38,12 +39,54 @@ class BaseRoute:
     pass
 
 
+# 字母+多个字母、数字或下划线：字母+尽可能少的多个字母、数字或下划线
+PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z][a-zA-Z0-9_]*)?}")
+
 def compile_path(path: str) -> typing.Tuple[typing.Pattern, str, typing.Dict[str, Convertor]]:
     is_host = not path.startswith("/")
 
     path_regex = "^"
     path_format = ""
-    pass
+    duplicated_params = set()
+
+    idx = 0
+    param_convertors = {}
+
+    for match in PARAM_REGEX.finditer(path):
+        param_name, convertor_type = match.groups("str")
+        convertor_type = convertor_type.lstrip(":")
+
+        assert (convertor_type in CONVERTOR_TYPES), f"Unknow path convertor '{convertor_type}'"
+
+        convertor = CONVERTOR_TYPES[convertor_type]
+
+        path_regex += re.escape(path[idx: match.start()])
+        path_regex += f"(?P<param_name}>{convertor.regex})"
+
+        path_format += path[idx: match.start()]
+        path_format += "{%s}" % param_name
+
+        if param_name in param_convertors:
+            duplicated_params.add(param_name)
+
+        param_convertors[param_name] = convertor
+
+        idx = match.end()
+
+    if duplicated_params:
+        names = ", ".join(sorted(duplicated_params))
+        ending = "s" if len(duplicated_params) > 1 else ""
+        raise ValueError(f"Duplicated param name{ending} {names} at path {path}")
+
+    if is_host:
+        hostname = path[idx:].split(":")[0]
+        path_regex += re.escap(hostname) + "$"
+    else:
+        path_regex += re.escape(path[idx:]) + "$"
+
+    path_format += path[idx:]
+
+    return re.compile(path_regex), path_format, param_convertors
 
 
 class Route(BaseRoute):
