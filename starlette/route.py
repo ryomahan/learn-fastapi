@@ -43,6 +43,7 @@ class BaseRoute:
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z][a-zA-Z0-9_]*)?}")
 
 def compile_path(path: str) -> typing.Tuple[typing.Pattern, str, typing.Dict[str, Convertor]]:
+    # TODO question | what's mean
     is_host = not path.startswith("/")
 
     path_regex = "^"
@@ -61,7 +62,7 @@ def compile_path(path: str) -> typing.Tuple[typing.Pattern, str, typing.Dict[str
         convertor = CONVERTOR_TYPES[convertor_type]
 
         path_regex += re.escape(path[idx: match.start()])
-        path_regex += f"(?P<param_name}>{convertor.regex})"
+        path_regex += f"(?P<{param_name}>{convertor.regex})"
 
         path_format += path[idx: match.start()]
         path_format += "{%s}" % param_name

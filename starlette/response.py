@@ -123,3 +123,7 @@ class JSONResponse(Response):
             indent=None,
             separators=(",", ":"),
         ).encode("utf-8")
+
+
+class PlainTextResponse(Response):
+    media_type = "text/plain"

@@ -1,15 +1,12 @@
 from cgitb import handler
 import typing
 
-from starlette.middleware import Middleware
 from starlette.type import ASGIApp, Scope, Receive, Send
-
-
-# 待导入
-class State():
-
-    def __init__(self):
-        return 1
+from starlette.route import BaseRoute
+from starlette.request import Request
+from starlette.response import Response
+from starlette.middleware import Middleware
+from starlette.datastructure import State
 
 
 class Router:
@@ -18,9 +15,6 @@ class Router:
         return 1
 
 
-Request = None
-Response = None
-BaseRoute = None
 ExceptionMiddleware = None
 ServerErrorMiddleware = None
 
