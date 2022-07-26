@@ -4,16 +4,24 @@ import inspect
 import warnings
 import functools
 import contextlib
+from enum import Enum
 from contextlib import asynccontextmanager
 
 from starlette.type import ASGIApp, Scope, Receive, Send
 from starlette.route import BaseRoute
-from starlette.response import PlainTextResponse
+from starlette.response import PlainTextResponse, RedirectResponse
 from starlette.exception import HTTPException
 from starlette.websocket import WebSocketClose
+from starlette.datastructure import URL
 
 
 _T = typing.TypeVar("_T")
+
+
+class Match(Enum):
+    NONE = 0
+    PARTIAL = 1
+    FULL = 2
 
 
 # TODO question | why not _AsyncLifeContextManager?
@@ -102,3 +110,56 @@ class Router:
         else:
             response = PlainTextResponse("Not Found", status_code=404)
         await response(scope, receive, send)
+
+    async def lifespan(self, scope: Scope, receive: Receive, send: Send) -> None:
+        pass
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        assert scope["type"] in ("http", "websocket", "lifespan")
+
+        if "router" not in scope:
+            scope["router"] = self
+
+        if scope["type"] == "lifespan":
+            await self.lifespan(scope, receive, send)
+            return
+
+        # 局部的
+        partial = None
+
+        for route in self.routes:
+            match, child_scope = route.matches(scope)
+
+            if match == Match.FULL:
+                scope.update(child_scope)
+                await route.handle(scope, receive, send)
+                return
+            elif match == Match.PARTIAL and partial is None:
+                partial = route
+                partial_scope = child_scope
+
+        if partial is not None:
+            scope.update(partial_scope)
+            await partial.handle(scope, receive, send)
+            return
+
+        if scope["type"] == "http" and self.redirect_slashes and scope["path"] != "/":
+            redirect_scope = dict(scope)
+            if scope["path"].endswith("/"):
+                redirect_scope["path"] = redirect_scope["path"].rstrip("/")
+            else:
+                redirect_scope["path"] = redirect_scope["path"] + "/"
+
+            for route in self.routes:
+                match, child_scope = route.matches(redirect_scope)
+                if match != Match.NONE:
+                    redirect_url = URL(scope=redirect_scope)
+                    response = RedirectResponse(url=str(redirect_url))
+                    await response(scope, receive, send)
+                    return
+
+        await self.default(scope, receive, send)
+
+
+
+

@@ -1,6 +1,7 @@
 import typing
 
 from starlette.type import Scope, Receive, Send, Message
+from starlette.datastructure import Headers
 
 
 class HTTPConnection(typing.Mapping[str, typing.Any]):
@@ -9,10 +10,28 @@ class HTTPConnection(typing.Mapping[str, typing.Any]):
     """
 
     def __init__(self, scope: Scope, receive: typing.Optional[Receive] = None) -> None:
+        print("-" * 50)
+        print(scope)
+        print("-" * 50)
         # TODO question | why HTTPConnection class type in http or websocket
         assert scope["type"] in ("http", "websocket",)
 
         self.scope = scope
+
+    def __getitem__(self, key: str) -> typing.Any:
+        return self.scope[key]
+
+    def __iter__(self) -> typing.Iterator[str]:
+        return iter(self.scope)
+
+    def __len__(self) -> int:
+        return len(self.scope)
+
+    @property
+    def headers(self) -> Headers:
+        if not hasattr(self, "_headers"):
+            self._headers = Headers(scope=self.scope)
+        return self._headers
 
 
 async def empty_receive() -> typing.NoReturn:

@@ -1,7 +1,9 @@
 import json
 import typing
+from urllib.parse import quote
 
 from starlette.type import Scope, Receive, Send
+from starlette.datastructure import URL, MutableHeaders
 
 BackgroundTask = None
 
@@ -26,6 +28,12 @@ class Response:
         self.background = background
         self.body = self.render(content)
         self.init_headers(headers)
+
+    @property
+    def headers(self) -> MutableHeaders:
+        if not hasattr(self, "_headers"):
+            self._headers = MutableHeaders(raw=self.raw_headers)
+        return self._headers
 
     def render(self, content: typing.Any) -> bytes:
         if content is None:
@@ -125,5 +133,21 @@ class JSONResponse(Response):
         ).encode("utf-8")
 
 
+class HTMLResponse(Response):
+    media_type = "text/html"
+
+
 class PlainTextResponse(Response):
     media_type = "text/plain"
+
+
+class RedirectResponse(Response):
+    def __init__(
+            self,
+            url: typing.Union[str, URL],
+            status_code: int = 307,
+            headers: typing.Optional[typing.Mapping[str, str]] = None,
+            background: typing.Optional[BackgroundTask] = None,
+    ) -> None:
+        super().__init__(content=b"", status_code=status_code, headers=headers, background=background)
+        self.headers["location"] = quote(str(url), safe=":/%#?=@[]!$&'()*+,;")

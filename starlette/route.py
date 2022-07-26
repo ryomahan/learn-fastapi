@@ -2,12 +2,22 @@ import re
 import typing
 import inspect
 import functools
+from enum import Enum
 
-from starlette.request import Request
-from starlette.utils import is_async_callable
-from starlette.convertor import Convertor, CONVERTOR_TYPES
-from starlette.concurrency import run_in_threadpool
 from starlette.type import ASGIApp, Scope, Receive, Send
+from starlette.utils import is_async_callable
+from starlette.request import Request
+from starlette.response import Response, PlainTextResponse
+from starlette.convertor import Convertor, CONVERTOR_TYPES
+from starlette.websocket import WebSocketClose
+from starlette.concurrency import run_in_threadpool
+from starlette.datastructure import URLPath
+
+
+class Match(Enum):
+    NONE = 0
+    PARTIAL = 1
+    FULL = 2
 
 
 def request_response(func: typing.Callable) -> ASGIApp:
@@ -36,11 +46,36 @@ def get_name(endpoint: typing.Callable) -> str:
 
 
 class BaseRoute:
-    pass
+
+    def matches(self, scope: Scope) -> typing.Tuple[Match, Scope]:
+        raise NotImplementedError()
+
+    def url_path_for(self, name: str, **path_params: typing.Any) -> URLPath:
+        raise NotImplementedError()
+
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        raise NotImplementedError()
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ route 可以被作为一个独立的 ASGI Application 使用 """
+        match, child_scope = self.matches(scope)
+
+        if match == Match.NONE:
+            if scope["type"] == "http":
+                response = PlainTextResponse("Not Found", status_code=404)
+                await response(scope, receive, send)
+            elif scope["type"] == "websocket":
+                websocket_close = WebSocketClose()
+                await websocket_close(scope, receive, send)
+            return
+
+        scope.update(child_scope)
+        await self.handle(scope, receive, send)
 
 
 # 字母+多个字母、数字或下划线：字母+尽可能少的多个字母、数字或下划线
 PARAM_REGEX = re.compile("{([a-zA-Z_][a-zA-Z0-9_]*)(:[a-zA-Z][a-zA-Z0-9_]*)?}")
+
 
 def compile_path(path: str) -> typing.Tuple[typing.Pattern, str, typing.Dict[str, Convertor]]:
     # TODO question | what's mean
@@ -136,3 +171,30 @@ class Route(BaseRoute):
 
         self.path_regex, self.path_format, self.param_convertors = compile_path(path)
 
+    def matches(self, scope: Scope) -> typing.Tuple[Match, Scope]:
+        if scope["type"] == "http":
+            # TODO question | what's means
+            match = self.path_regex.match(scope["path"])
+
+            if match:
+                matched_params = match.groupdict()
+                for key, value in matched_params.items():
+                    # TODO question | what's means
+                    matched_params[key] = self.param_convertors[key].convert(value)
+                path_params = dict(scope.get("path_params", ""))
+                # TODO question | why do this
+                path_params.update(matched_params)
+                child_scope = {"endpoint": self.endpoint, "path_params": path_params}
+                # TODO question | what's mearns
+                if self.methods and scope["method"] not in self.methods:
+                    return Match.PARTIAL, child_scope
+                else:
+                    return Match.FULL, child_scope
+        return Match.NONE, {}
+
+
+    def url_path_for(self, name: str, **path_params: typing.Any) -> URLPath:
+        pass
+
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        pass

@@ -3,20 +3,14 @@ import typing
 
 from starlette.type import ASGIApp, Scope, Receive, Send
 from starlette.route import BaseRoute
+from starlette.router import Router
 from starlette.request import Request
 from starlette.response import Response
 from starlette.middleware import Middleware
 from starlette.datastructure import State
+from starlette.middleware.error import ServerErrorMiddleware
+from starlette.middleware.exception import ExceptionMiddleware
 
-
-class Router:
-
-    def __int__(self, routes, on_startup, on_shutdown, lifespan):
-        return 1
-
-
-ExceptionMiddleware = None
-ServerErrorMiddleware = None
 
 class Starlette:
     
@@ -58,7 +52,7 @@ class Starlette:
         self.middleware_stack = self.build_middleware_stack()
 
     @property
-    def debug(self) -> None:
+    def debug(self) -> bool:
         return self._debug
 
     @debug.setter
@@ -102,7 +96,7 @@ class Starlette:
         # 将 middleware 顺序进行反转，然后不断进行套娃
         for cls, options in reversed(middleware):
             app = cls(app=app, **options)
-        
+
         return app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
