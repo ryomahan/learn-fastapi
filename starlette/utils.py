@@ -15,7 +15,8 @@ def is_async_callable(obj: typing.Any) -> bool:
         (callable(obj) and asyncio.iscoroutinefunction(obj.__call__))
 
 
-def debug_print(obj: typing.Any) -> None:
+def debug_print(name: str = "", obj: typing.Any = None) -> None:
     print("-" * 50)
+    print(name)
     print(obj)
     print("-" * 50)

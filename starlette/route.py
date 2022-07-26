@@ -5,10 +5,11 @@ import functools
 from enum import Enum
 
 from starlette.type import ASGIApp, Scope, Receive, Send
-from starlette.utils import is_async_callable
+from starlette.utils import is_async_callable, debug_print
 from starlette.request import Request
-from starlette.response import Response, PlainTextResponse
+from starlette.response import PlainTextResponse
 from starlette.convertor import Convertor, CONVERTOR_TYPES
+from starlette.exception import HTTPException
 from starlette.websocket import WebSocketClose
 from starlette.concurrency import run_in_threadpool
 from starlette.datastructure import URLPath
@@ -197,4 +198,13 @@ class Route(BaseRoute):
         pass
 
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
-        pass
+        debug_print("123", 123)
+        if self.methods and scope["method"] not in self.methods:
+            headers = {"Allow": ", ".join(self.methods)}
+            if "app" in scope:
+                raise HTTPException(status_code=405, headers=headers)
+            else:
+                response = PlainTextResponse("Method Not Allowed", status_code=405, headers=headers)
+            await response(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)

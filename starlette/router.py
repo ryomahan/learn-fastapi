@@ -8,6 +8,7 @@ from enum import Enum
 from contextlib import asynccontextmanager
 
 from starlette.type import ASGIApp, Scope, Receive, Send
+from starlette.utils import debug_print
 from starlette.route import BaseRoute
 from starlette.response import PlainTextResponse, RedirectResponse
 from starlette.exception import HTTPException
@@ -130,11 +131,11 @@ class Router:
         for route in self.routes:
             match, child_scope = route.matches(scope)
 
-            if match == Match.FULL:
+            if match.value == Match.FULL.value:
                 scope.update(child_scope)
                 await route.handle(scope, receive, send)
                 return
-            elif match == Match.PARTIAL and partial is None:
+            elif match.value == Match.PARTIAL.value and partial is None:
                 partial = route
                 partial_scope = child_scope
 
@@ -151,6 +152,7 @@ class Router:
                 redirect_scope["path"] = redirect_scope["path"] + "/"
 
             for route in self.routes:
+                debug_print(route)
                 match, child_scope = route.matches(redirect_scope)
                 if match != Match.NONE:
                     redirect_url = URL(scope=redirect_scope)

@@ -10,9 +10,6 @@ class HTTPConnection(typing.Mapping[str, typing.Any]):
     """
 
     def __init__(self, scope: Scope, receive: typing.Optional[Receive] = None) -> None:
-        print("-" * 50)
-        print(scope)
-        print("-" * 50)
         # TODO question | why HTTPConnection class type in http or websocket
         assert scope["type"] in ("http", "websocket",)
 

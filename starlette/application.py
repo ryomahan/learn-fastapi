@@ -42,7 +42,7 @@ class Starlette:
         self._debug = debug
         self.state = State()
         self.router = Router(
-            routes, on_startup=on_startup, on_shutdown=on_shutdown, lifespan=lifespan
+            routes, on_startup=on_startup, on_shutdown=on_shutdown, lifespan=lifespan, redirect_slashes=False,
         )
         self.exception_handlers = (
             {} if exception_handlers is None else dict(exception_handlers)
