@@ -1,6 +1,7 @@
 import typing
 
 from starlette.type import Scope, Receive, Send, Message
+from starlette.utils import debug_print
 from starlette.datastructure import Headers
 
 
@@ -12,6 +13,8 @@ class HTTPConnection(typing.Mapping[str, typing.Any]):
     def __init__(self, scope: Scope, receive: typing.Optional[Receive] = None) -> None:
         # TODO question | why HTTPConnection class type in http or websocket
         assert scope["type"] in ("http", "websocket",)
+
+        debug_print("scope", scope)
 
         self.scope = scope
 
@@ -29,6 +32,16 @@ class HTTPConnection(typing.Mapping[str, typing.Any]):
         if not hasattr(self, "_headers"):
             self._headers = Headers(scope=self.scope)
         return self._headers
+
+    @property
+    def query_params(self) -> QueryParams:
+        if not hasattr(self, "_query_params"):
+            self._query_params = QueryParams(self.scope["query_string"])
+        return self._query_params
+
+    @property
+    def path_params(self) -> typing.Dict[str, typing.Any]:
+        return self.scope.get("path_params", {})
 
 
 async def empty_receive() -> typing.NoReturn:

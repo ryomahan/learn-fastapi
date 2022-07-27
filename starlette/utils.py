@@ -1,4 +1,5 @@
 import typing
+import pprint
 import asyncio
 import functools
 
@@ -18,5 +19,5 @@ def is_async_callable(obj: typing.Any) -> bool:
 def debug_print(name: str = "", obj: typing.Any = None) -> None:
     print("-" * 50)
     print(name)
-    print(obj)
+    pprint.pp(obj)
     print("-" * 50)

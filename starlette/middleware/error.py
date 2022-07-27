@@ -150,7 +150,6 @@ class ServerErrorMiddleware:
         except Exception as exc:
             request = Request(scope)
 
-            debug_print(self.debug)
             if self.debug:
                 response = self.debug_response(request, exc)
             elif self.handler is None:

@@ -1,15 +1,15 @@
 [project]
-name = "learn-fastapi"
-version = "0.0.1"
+name = ""
+version = ""
 description = ""
 authors = [
-    {name = "ryomahan", email = "ryomahan1996@gmail.com"},
+    {name = "RyomaHan", email = "ryomahan1996@gmail.com"},
 ]
 dependencies = [
-    "uvicorn>=0.18.2",
     "anyio>=3.6.1",
+    "uvicorn>=0.18.2",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 license = {text = "MIT"}
 
 [build-system]

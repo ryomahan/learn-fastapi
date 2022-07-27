@@ -152,7 +152,6 @@ class Router:
                 redirect_scope["path"] = redirect_scope["path"] + "/"
 
             for route in self.routes:
-                debug_print(route)
                 match, child_scope = route.matches(redirect_scope)
                 if match != Match.NONE:
                     redirect_url = URL(scope=redirect_scope)

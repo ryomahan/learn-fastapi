@@ -193,12 +193,10 @@ class Route(BaseRoute):
                     return Match.FULL, child_scope
         return Match.NONE, {}
 
-
     def url_path_for(self, name: str, **path_params: typing.Any) -> URLPath:
         pass
 
     async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
-        debug_print("123", 123)
         if self.methods and scope["method"] not in self.methods:
             headers = {"Allow": ", ".join(self.methods)}
             if "app" in scope:

@@ -4,6 +4,10 @@ from urllib.parse import SplitResult, urlsplit
 from starlette.type import Scope
 
 
+_KeyType = typing.TypeVar("_KeyType")
+_CovariantValueType = typing.TypeVar("_CovariantValueType", covariant=True)
+
+
 class URL:
     def __init__(self, url: str = "", scope: typing.Optional[Scope] = None, **components: typing.Any) -> None:
         if scope is not None:
@@ -99,6 +103,14 @@ class URLPath(str):
     def make_absolute_url(self, base_url: typing.Union[str, URL]) -> str:
         if isinstance(base_url, str):
             pass
+
+
+class ImmutableMultiDict(typing.Mapping[_KeyType, _CovariantValueType]):
+    pass
+
+
+class QueryParams:
+    pass
 
 
 class Headers(typing.Mapping[str, str]):
