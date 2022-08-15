@@ -45,10 +45,6 @@ async def hello_world(request):
 
 
 async def app(scope, receive, send):
-    pprint.pp(scope)
-    pprint.pp(receive)
-    pprint.pp(send)
-
     body = "Hello, world!".encode("utf-8")
     raw_headers = []
     content_length = str(len(body))
